@@ -11,14 +11,10 @@ Some examples were written as ES2015, some with legacy js (will update soon).
 1. Patterns
   1. [Computed Props](#computed-props)
   1. [Compound State](#compound-state)
-  1. [prefer-ternary-to-sub-render](#prefer-ternary-to-sub-render)
+  1. [Use Sub-render](#use-sub-render)
   1. [View Components](#view-components)
   1. [Container Components](#container-components)
-1. Anti-patterns
   1. [Compound Conditions](#compound-conditions)
-  1. [Cached State in render](#cached-state-in-render)
-  1. [Existence Checking](#existence-checking)
-  1. [Setting State from Props](#setting-state-from-props)
 1. Practices
   1. [Naming Handle Methods](#naming-handler-methods)
   1. [Naming Events](#naming-events)
@@ -30,9 +26,7 @@ Some examples were written as ES2015, some with legacy js (will update soon).
   1. [classnames](#classnames)
 1. Other
   1. [JSX](#jsx)
-  1. [ES2015](#es2015)
   1. [react-rails](#react-rails)
-  1. [rails-assets](#rails-assets)
   1. [flux](#flux)
 
 ---
