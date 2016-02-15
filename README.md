@@ -1,11 +1,10 @@
 React
 =====
-
-*Mostly reasonable patterns for writing React on Rails*
+Adjusted guided for frontend development using React at Nanameue.jp.
+Some examples were written as ES2015, some with legacy js (will update soon).
 
 ## Table of Contents
 
-1. [Scope](#scope)
 1. Organization
   1. [Component Organization](#component-organization)
   1. [Formatting Props](#formatting-props)
@@ -38,76 +37,68 @@ React
 
 ---
 
-## Scope
-
-This is how we write [React.js](https://facebook.github.io/react/) on Rails.
-We've struggled to find the happy path. Recommendations here represent a good
-number of failed attempts. If something seems out of place, it probably is;
-let us know what you've found.
-
-All examples written in ES2015 syntax now that the
-[official react-rails gem](https://github.com/reactjs/react-rails) ships with
-[babel](http://babeljs.io/).
-
-**[⬆ back to top](#table-of-contents)**
-
----
 
 ## Component Organization
 
 * class definition
+  * proptypes
+  * getDefaultProps
+  * getInitialState
   * constructor
     * event handlers
   * 'component' lifecycle events
-  * getters
+  * sub-render
   * render
-* defaultProps
-* proptypes
+
 
 ```javascript
-class Person extends React.Component {
-  constructor (props) {
-    super(props);
+var Person = React.createClass({
+  
+  propTypes = {
+    name: React.PropTypes.string
+  };
+  
+  getDefaultProps: function() {
+    return {
+	  name: 'Guest'
+	};
+  },  
+ 
+  componentWillMount: function() {
 
-    this.state = { smiling: false };
-
-    this.handleClick = () => {
-      this.setState({smiling: !this.state.smiling});
-    };
-  }
-
-  componentWillMount () {
-    // add event listeners (Flux Store, WebSocket, document, etc.)
   },
 
-  componentDidMount () {
+  componentDidMount: function() {
     // React.getDOMNode()
   },
-
-  componentWillUnmount () {
-    // remove event listeners (Flux Store, WebSocket, document, etc.)
+  
+  componentWillReceiveProps: function(nextProps) {
+  },
+  
+  shouldComponentUpdate: function(nextProps, nextState) {
   },
 
-  get smilingMessage () {
-    return (this.state.smiling) ? "is smiling" : "";
-  }
+  componentWillUnmount: function() {
 
-  render () {
+  },
+
+  renderMessage: function() {
     return (
-      <div onClick={this.handleClick}>
-        {this.props.name} {this.smilingMessage}
-      </div>
+      <div>This is a message</div>
     );
   },
-}
 
-Person.defaultProps = {
-  name: 'Guest'
-};
+  render: function() {
+    return (
+      <div onClick={this.handleClick}>
+        {this.props.name}
+        {this.renderMessage()}
+      </div>
+    );
+  }
+  
+});
 
-Person.propTypes = {
-  name: React.PropTypes.string
-};
 ```
 
 **[⬆ back to top](#table-of-contents)**
@@ -147,12 +138,12 @@ Use getters to name computed properties.
 
 ```javascript
   // bad
-  firstAndLastName () {
+  firstAndLastName: function() {
     return `${this.props.firstName} ${this.props.lastname}`;
   }
 
   // good
-  get fullName () {
+  getFullName: function() {
     return `${this.props.firstName} ${this.props.lastname}`;
   }
 ```
@@ -165,45 +156,31 @@ See: [Cached State in render](#cached-state-in-render) anti-pattern
 
 ## Compound State
 
-Prefix compound state getters with a verb for readability.
+Prefix compound state getters with a verb for readability and make sure that it always returns boolean.
 
 ```javascript
 // bad
-happyAndKnowsIt () {
+happyAndKnowsIt: function() {
   return this.state.happy && this.state.knowsIt;
 }
 ```
 
 ```javascript
 // good
-get isHappyAndKnowsIt () {
+get isHappyAndKnowsIt: function() {
   return this.state.happy && this.state.knowsIt;
 }
 ```
-
-These methods *MUST* return a `boolean` value.
 
 See: [Compound Conditions](#compound-conditions) anti-pattern
 
 **[⬆ back to top](#table-of-contents)**
 
-## Prefer Ternary to Sub-render
+## Use Sub-render
 
-Keep login inside the `render`.
-
+Use subrender to make render function easy to read. Ternary looks ugly, please do not use it.
 ```javascript
 // bad
-renderSmilingStatement () {
-  return <strong>{(this.state.isSmiling) ? " is smiling." : ""}</strong>;
-},
-
-render () {
-  return <div>{this.props.name}{this.renderSmilingStatement()}</div>;
-}
-```
-
-```javascript
-// good
 render () {
   return (
     <div>
@@ -217,17 +194,33 @@ render () {
 }
 ```
 
+```javascript
+// good
+renderSmilingStatement: function() {
+  var text = ' is smiling.';
+  if (!this.state.isSmiling) {
+    text = '';
+  }
+  return <strong>{text}</strong>;
+},
+
+render: function() {
+  return <div>{this.props.name}{this.renderSmilingStatement()}</div>;
+}
+```
+
 **[⬆ back to top](#table-of-contents)**
 
 ## View Components
 
 Compose components into views. Don't create one-off components that merge layout
-and domain components.
+and domain components. Unless the wrapper component contains extended logics.
 
 ```javascript
-// bad
+// bad. the wrapper only wrap <div> which doesn't cause any values and didn't 
+// do anything with the inner component.
 class PeopleWrappedInBSRow extends React.Component {
-  render () {
+  render: function() {
     return (
       <div className="row">
         <People people={this.state.people} />
@@ -238,15 +231,15 @@ class PeopleWrappedInBSRow extends React.Component {
 ```
 
 ```javascript
-// good
+// good. BSRow does a wrapping job and can be reused.
 class BSRow extends React.Component {
-  render () {
+  render: function() {
     return <div className="row">{this.props.children}</div>;
   }
 }
 
 class SomeView extends React.Component {
-  render () {
+  render: function() {
     return (
       <BSRow>
         <People people={this.state.people} />
@@ -256,18 +249,63 @@ class SomeView extends React.Component {
 }
 ```
 
+
 **[⬆ back to top](#table-of-contents)**
 
 ## Container Components
+Create a dumb component for reusability. Wrap it with another component to make it clever.
+```javascript
+// bad. Component contains extra logic and can not be reused.
+class PersonRow extends React.Component {
+  prefix: function(name) {
+    return 'Dr.' + name;
+  }, 
+  render: function() {
+    return (
+      <div className="person-row">
+        <span>Name:</span> {this.prefix(this.props.person.name)}
+      </div>
+    );
+  }
+}
+```
+
+
+```javascript
+// good. Dumb component is easy to reuse.
+class Person extends React.Component {
+  return (
+    <div className="person-row">
+      <span>Name:</span> {this.prefix(this.props.person.name)}
+    </div>    
+  );
+}
+
+// To reuse it, just create another wrapper that add extened logics.
+class PrefixedPersonRow extends React.Component {
+  prefix: function(person) {
+    return {
+      name: 'Dr.' + person.name,
+      ....
+    }
+  },
+  render: function() {
+    return (
+      <PersonRow person={this.prefix(this.props.person)} />
+    );
+  }
+}
+```
 
 > A container does data fetching and then renders its corresponding
 > sub-component. That's it. &mdash; Jason Bonta
 
-#### Bad
+Also, please use Flux pattern (reflux, redux, alt, ...) for data fetching. 
 
 ```javascript
 // CommentList.js
 
+// Bad. Component should contain only display-related logics.
 class CommentList extends React.Component {
   getInitialState () {
     return { comments: [] };
@@ -295,51 +333,6 @@ class CommentList extends React.Component {
 }
 ```
 
-#### Good
-
-```javascript
-// CommentList.js
-
-class CommentList extends React.Component {
-  render() {
-    return (
-      <ul>
-        {this.props.comments.map(({body, author}) => {
-          return <li>{body}—{author}</li>;
-        })}
-      </ul>
-    );
-  }
-}
-```
-
-```javascript
-// CommentListContainer.js
-
-class CommentListContainer extends React.Component {
-  getInitialState () {
-    return { comments: [] }
-  }
-
-  componentDidMount () {
-    $.ajax({
-      url: "/my-comments.json",
-      dataType: 'json',
-      success: function(comments) {
-        this.setState({comments: comments});
-      }.bind(this)
-    });
-  }
-
-  render () {
-    return <CommentList comments={this.state.comments} />;
-  }
-}
-```
-
-[Read more](https://medium.com/@learnreact/container-components-c0e67432e005)  
-[Watch more](https://www.youtube.com/watch?v=KYzlpRvWZ6c&t=1351)
-
 **[⬆ back to top](#table-of-contents)**
 
 ---
@@ -350,7 +343,7 @@ Do not keep state in `render`
 
 ```javascript
 // bad
-render () {
+render: function() {
   let name = `Mrs. ${this.props.name}`;
 
   return <div>{name}</div>;
@@ -364,16 +357,14 @@ render () {
 
 ```javascript
 // best
-get fancyName () {
+getFancyName: function() {
   return `Mrs. ${this.props.name}`;
 }
 
-render () {
+render: function() {
   return <div>{this.fancyName}</div>;
 }
 ```
-
-*This is mostly stylistic and keeps diffs nice. I doubt that there's a significant perf reason to do this.*
 
 See: [Computed Props](#computed-props) pattern
 
@@ -408,69 +399,6 @@ pass new state down as props.
 See: [Compound State](#compound-state) pattern
 
 **[⬆ back to top](#table-of-contents)**
-
-## Existence Checking
-
-Do not check existence of `prop` objects. Use `defaultProps`.
-
-```javascript
-// bad
-render () {
-  if (this.props.person) {
-    return <div>{this.props.person.firstName}</div>;
-  } else {
-    return null;
-  }
-}
-```
-
-```javascript
-// good
-class MyComponent extends React.Component {
-  render() {
-    return <div>{this.props.person.firstName}</div>;
-  }
-}
-
-MyComponent.defaultProps = {
-  person: {
-    firstName: 'Guest'
-  }
-};
-```
-
-This is only where objects or arrays are used. Use PropTypes.shape to clarify
-the types of nested data expected by the component.
-
-**[⬆ back to top](#table-of-contents)**
-
-## Setting State from Props
-
-Do not set state from props without obvious intent.
-
-```javascript
-// bad
-getInitialState () {
-  return {
-    items: this.props.items
-  };
-}
-```
-
-```javascript
-// good
-getInitialState () {
-  return {
-    items: this.props.initialItems
-  };
-}
-```
-
-Read: ["Props in getInitialState Is an Anti-Pattern"](http://facebook.github.io/react/tips/props-in-getInitialState-as-anti-pattern.html)
-
-**[⬆ back to top](#table-of-contents)**
-
----
 
 ## Naming Handler Methods
 
@@ -665,21 +593,7 @@ Read: [Class Name Manipulation](https://github.com/JedWatson/classnames/blob/mas
 
 ## JSX
 
-We used to have some hardcore CoffeeScript lovers is the group. The unfortunate
-thing about writing templates in CoffeeScript is that it leaves you on the hook
-when certain implementations changes that JSX would normally abstract.
-
-We no longer recommend using CoffeeScript to write `render`.
-
-For posterity, you can read about how we used CoffeeScript, when using CoffeeScript was
-non-negotiable: [CoffeeScript and JSX](https://slack-files.com/T024L9M0Y-F02HP4JM3-80d714).
-
-**[⬆ back to top](#table-of-contents)**
-
-## ES2015
-
-[react-rails](https://github.com/reactjs/react-rails) now ships with [babel](babeljs.io). Anything
-you can do in Babel, you can do in Rails. See the documentation for additional config.
+Use JSX in your code. https://facebook.github.io/react/docs/jsx-in-depth.html . It helps making the code easier to read for developer and designer.
 
 **[⬆ back to top](#table-of-contents)**
 
@@ -691,22 +605,8 @@ conventions and React.
 
 **[⬆ back to top](#table-of-contents)**
 
-## rails-assets
-[rails-assets](https://rails-assets.org) should be considered for bundling
-js/css assets into your applications. The most popular React-libraries we use
-are registered on [Bower](http://bower.io) and can be easily added through
-Bundler and react-assets.
-
-**caveats: rails-assets gives you access to bower projects via Sprockets
-requires. This is a win for the traditionally hand-wavy approach that Rails
-takes with JavaScript. This approach doesn't buy you modularity or the ability to
-interop with JS tooling that requires modules.**
-
-**[⬆ back to top](#table-of-contents)**
-
 ## flux
 
-Use [Alt](http://alt.js.org) for flux implementation. Alt is true to the flux
-pattern with the best documentation available.
+We recommend using [Reflux](https://github.com/reflux/refluxjs) for a small to medium size project, and [Redux](https://github.com/reactjs/redux) for large&complex project.
 
 **[⬆ back to top](#table-of-contents)**
